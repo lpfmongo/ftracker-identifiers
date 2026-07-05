@@ -39,3 +39,11 @@ build-release: clean
 # Remove build artifacts
 clean:
     cargo clean
+
+# Build the documentation book (requires mdbook: cargo install mdbook)
+docs-build:
+    mdbook build docs
+
+# Serve the documentation book locally with live-reload
+docs-serve:
+    mdbook serve docs --open

@@ -1,4 +1,15 @@
 [book]
 title = "FTracker Identifiers"
+description = "Validated Rust types for financial and regulatory identifiers: CNPJ today, ISIN and CFI planned."
 authors = ["Leonardo Freitas"]
 language = "en"
+src = "src"
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/lnivva/ftracker-identifiers"
+edit-url-template = "https://github.com/lnivva/ftracker-identifiers/edit/main/docs/{path}"
+
+[output.html.search]
+enable = true
