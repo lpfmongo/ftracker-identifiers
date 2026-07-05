@@ -1,0 +1,36 @@
+[package]
+name = "ftracker-identifiers"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/lnivva/ftracker-identifiers"
+rust-version = "1.93.0"
+
+[dependencies]
+serde = { version = "1", features = ["derive"], default-features = false, optional = true }
+schemars = { version = "1", default-features = false, optional = true }
+arbitrary = { version = "1", features = ["derive"], optional = true }
+proptest = { version = "1", default-features = false, optional = true }
+
+[dev-dependencies]
+criterion = "0.8.2"
+proptest = "1"
+serde_json = "1"
+
+[features]
+default = ["std"]
+
+std = [
+    "serde?/std",
+    "schemars?/std",
+    "proptest?/std",
+]
+
+serde = ["dep:serde"]
+schemars = ["dep:schemars", "serde"]
+arbitrary = ["dep:arbitrary"]
+proptest = ["dep:proptest"]
+
+[[bench]]
+name = "cnpj_benches"
+harness = false
