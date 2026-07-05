@@ -1,7 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 
-mod cnpj;
+pub mod cnpj;
+#[doc(inline)]
 pub use cnpj::{Cnpj, CnpjError, FormattedCnpj};
 
 #[cfg(feature = "proptest")]
