@@ -61,7 +61,7 @@ pub use error::CnpjError;
 pub use fmt::FormattedCnpj;
 
 use core::convert::TryFrom;
-use core::str::{from_utf8_unchecked, FromStr};
+use core::str::{FromStr, from_utf8_unchecked};
 
 /// A validated CNPJ (Cadastro Nacional da Pessoa Jurídica).
 ///
@@ -165,8 +165,8 @@ impl Cnpj {
 
     /// Returns the branch/order segment as a number when it is purely numeric.
     ///
-    /// Returns `None` when the segment contains a letter, which is only possible for 
-    /// alphanumeric-format CNPJs. Numeric CNPJs, including the conventional matriz marker (`"0001"`), 
+    /// Returns `None` when the segment contains a letter, which is only possible for
+    /// alphanumeric-format CNPJs. Numeric CNPJs, including the conventional matriz marker (`"0001"`),
     /// always parse successfully.
     pub fn branch_number(&self) -> Option<u16> {
         self.branch_code().parse().ok()

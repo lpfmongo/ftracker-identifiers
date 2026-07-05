@@ -4,9 +4,9 @@
 //! punctuated display form, so that it round-trips as a plain identifier in JSON/config files.
 //! Deserializing always re-runs full validation; an untrusted payload can never produce an invalid `Cnpj`.
 
-use core::fmt;
 use ::serde::de::{self, Visitor};
 use ::serde::{Deserialize, Deserializer, Serialize, Serializer};
+use core::fmt;
 
 use super::Cnpj;
 

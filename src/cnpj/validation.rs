@@ -136,7 +136,7 @@ pub(super) fn compute_valid_check_digits(base: &[u8; BASE_LEN]) -> (u8, u8) {
     (dv1, dv2)
 }
 
-/// The classic Módulo 11 verification-digit algorithm, unchanged since the numeric-only CNPJ era: 
+/// The classic Módulo 11 verification-digit algorithm, unchanged since the numeric-only CNPJ era:
 /// weighted sum, remainder mod 11, then `0` if the remainder is `0` or `1`, otherwise `11 - remainder`.
 fn compute_check_digit(values: &[u32], weights: &[u32]) -> u8 {
     debug_assert_eq!(values.len(), weights.len());
