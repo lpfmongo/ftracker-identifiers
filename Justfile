@@ -24,9 +24,23 @@ build-ci: clean
 # Build the workspace (developer environment)
 build: clean
     cargo build --workspace --verbose
-    cargo about generate about.hbs > third-party-licenses.html
-    cargo deny check
     cargo tarpaulin --fail-under 30
+
+# Generate the third-party license report
+licenses-generate:
+    cargo about generate about.hbs > third-party-licenses.html
+
+# Check that the third-party license report is up to date
+licenses-check:
+    cargo about generate about.hbs > /tmp/third-party-licenses.html
+    diff -u third-party-licenses.html /tmp/third-party-licenses.html
+
+# Run dependency policy checks
+deny-check:
+    cargo deny check all
+
+# Run the full dependency and license policy suite
+policy-check: licenses-check deny-check
 
 # Run all workspace tests
 test: clean
