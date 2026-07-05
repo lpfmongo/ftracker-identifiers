@@ -1,0 +1,43 @@
+name: License Compliance Check
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/licenses.yaml'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - 'about.hbs'
+      - 'third-party-licenses.html'
+  workflow_dispatch:
+
+concurrency:
+  group: licenses-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  licenses:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-about
+        run: cargo install cargo-about --locked --features="cli"
+
+      - name: Generate license file
+        run: cargo about generate about.hbs > third-party-licenses.html
+
+      - name: Verify no drift
+        run: git diff --exit-code -- third-party-licenses.html
