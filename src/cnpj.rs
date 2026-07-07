@@ -86,7 +86,7 @@
 //!   string (`^[A-Z0-9]{12}[0-9]{2}$`). Implies `serde`.
 //! - **`arbitrary`** — implements `Arbitrary` for [`Cnpj`], generating structurally valid,
 //!   checksum-correct values for fuzz targets.
-//! - **`proptest`** — exposes reusable `proptest` strategies (`ftracker_identifiers::proptest`,
+//! - **`proptest`** — exposes reusable `proptest` strategies (`ftracker_identifiers::cnpj::proptest`,
 //!   when this feature is enabled) for generating checksum-valid [`Cnpj`] values and their
 //!   formatted string representations, so downstream property tests don't need to hand-roll a
 //!   generator.
@@ -164,7 +164,7 @@ pub use error::CnpjError;
 pub use fmt::FormattedCnpj;
 
 use core::convert::TryFrom;
-use core::str::{from_utf8_unchecked, FromStr};
+use core::str::{FromStr, from_utf8_unchecked};
 
 /// A validated CNPJ (Cadastro Nacional da Pessoa Jurídica).
 ///

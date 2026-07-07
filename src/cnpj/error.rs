@@ -19,6 +19,7 @@ impl fmt::Display for CharacterClass {
     }
 }
 
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CnpjError {
     /// The input was an empty string.

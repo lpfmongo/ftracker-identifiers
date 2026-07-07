@@ -35,7 +35,7 @@ assert!(Cnpj::parse("12abc34501de35").is_ok()); // lowercase is folded
 
 ## Validation rules
 
-Every fallible constructor runs the same rules, in this order:
+The string-based constructors run the following rules, in this order:
 
 1. **Length** — after formatting is stripped, the input must contain exactly 14 meaningful
    characters.
