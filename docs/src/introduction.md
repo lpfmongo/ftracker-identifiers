@@ -1,8 +1,7 @@
 # FTracker Identifiers
 
 `ftracker-identifiers` is a Rust crate of small, validated value types for the identifiers used
-across financial and regulatory data — things like Brazil's **CNPJ**, and (planned) instrument
-identifiers like **ISIN** and classification codes like **CFI**.
+across financial and regulatory data.
 
 Every type in this crate follows the same philosophy:
 
@@ -13,21 +12,23 @@ Every type in this crate follows the same philosophy:
 - **`no_std`-friendly.** The crate builds without `std` by default consumers who need it, falling
   back to `alloc` only where unavoidable (see each identifier's own chapter for specifics).
 - **Additive feature flags.** Integrations with `serde`, `schemars`, `arbitrary`, and `proptest`
-  are opt-in and never change an identifier's validation rules — enabling a feature only adds
+  are opt-in and never change an identifier's validation rules. Enabling a feature only adds
   capabilities, it never loosens or tightens what counts as "valid."
 
 ## What's covered today
 
 - [**CNPJ**](./identifiers/cnpj/README.md) — Brazil's national registry identifier for legal
   entities, supporting both the legacy numeric-only format and the 2026 alphanumeric format.
+- [**ISIN**](./identifiers/isin/README.md) — the ISO 6166 identifier for a fungible financial
+  security, validated with the ISO 6166 Luhn check digit.
 
 ## What's planned
 
 The **Identifiers** section of this book is organized so each identifier gets its own chapter,
 following the same shape: structure, parsing & validation, formatting, error handling, feature
-flags, and examples. **ISIN** and **CFI** are next on the roadmap; see
-[Adding a New Identifier](./contributing/adding-a-new-identifier.md) if you'd like to help build
-one of them out.
+flags, and examples. **CFI** is next on the roadmap; see
+[Adding a New Identifier](./contributing/adding-a-new-identifier.md) if you'd like to help build it
+out.
 
 ## Installation
 

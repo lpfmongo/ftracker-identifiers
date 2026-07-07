@@ -34,3 +34,7 @@ proptest = ["dep:proptest"]
 [[bench]]
 name = "cnpj_benches"
 harness = false
+
+[[bench]]
+name = "isin_benches"
+harness = false

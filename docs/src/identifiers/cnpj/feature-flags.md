@@ -62,18 +62,18 @@ mostly fail validation before reaching the code under test.
 
 ## `proptest`
 
-Exposes reusable [`proptest`](https://docs.rs/proptest) strategies at `ftracker_identifiers::proptest`:
+Exposes reusable [`proptest`](https://docs.rs/proptest) strategies at `ftracker_identifiers::cnpj::proptest`:
 
-- `proptest::valid_cnpj()` — a `Strategy<Value = Cnpj>` producing checksum-correct values spanning
-  both the numeric and alphanumeric formats.
-- `proptest::valid_cnpj_formatted_string()` — the same, rendered as a punctuated `String`, useful
-  for round-trip-through-formatting property tests.
+- `cnpj::proptest::valid_cnpj()` — a `Strategy<Value = Cnpj>` producing checksum-correct values
+  spanning both the numeric and alphanumeric formats.
+- `cnpj::proptest::valid_cnpj_formatted_string()` — the same, rendered as a punctuated `String`,
+  useful for round-trip-through-formatting property tests.
 
 This is the recommended way to property-test *your own* code that accepts a `Cnpj`, without
 hand-rolling a checksum-valid generator:
 
 ```rust,ignore
-use ftracker_identifiers::{proptest::valid_cnpj, Cnpj};
+use ftracker_identifiers::{cnpj::proptest::valid_cnpj, Cnpj};
 use proptest::proptest;
 
 proptest! {
