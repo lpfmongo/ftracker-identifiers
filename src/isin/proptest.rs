@@ -4,9 +4,10 @@
 //! `proptest` feature, so consumers can property-test code that takes an `Isin` without
 //! hand-rolling a checksum-valid generator.
 
+use super::validation::{build_valid_isin_bytes, ALPHANUMERIC, BASE_LEN, LETTERS};
 use super::Isin;
-use super::validation::{ALPHANUMERIC, BASE_LEN, LETTERS, build_valid_isin_bytes};
-use proptest::prelude::{Strategy, prop};
+use alloc::string::{String, ToString};
+use proptest::prelude::{prop, Strategy};
 
 /// A strategy producing structurally valid, checksum-correct [`Isin`] values: a two-letter country
 /// code, a nine-character alphanumeric NSIN, and a matching Luhn check digit.

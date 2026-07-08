@@ -4,10 +4,11 @@
 //! `proptest` feature, so consumers can property-test code that takes a `Cfi` without hand-rolling
 //! a taxonomically valid generator.
 
-use super::Cfi;
 use super::table::CATEGORIES;
 use super::validation::nth_letter;
-use proptest::prelude::{Just, Strategy, any, prop};
+use super::Cfi;
+use alloc::string::{String, ToString};
+use proptest::prelude::{any, prop, Just, Strategy};
 
 /// A strategy producing taxonomically valid [`Cfi`] values by walking the embedded ISO 10962 table:
 /// it picks a category, then a group within it, then a permitted letter for each of the four
