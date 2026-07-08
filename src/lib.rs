@@ -8,3 +8,7 @@ pub use cnpj::{Cnpj, CnpjError, FormattedCnpj};
 pub mod isin;
 #[doc(inline)]
 pub use isin::{Isin, IsinError};
+
+pub mod cfi;
+#[doc(inline)]
+pub use cfi::{Cfi, CfiError};

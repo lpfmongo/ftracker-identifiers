@@ -26,6 +26,17 @@ build: clean
     cargo build --workspace --verbose
     cargo tarpaulin --fail-under 30
 
+# Regenerate the committed CFI taxonomy table from data/cfi.json
+cfi-generate:
+    cargo run --bin generate_cfi_table --features codegen
+    cargo fmt
+
+# Check that the committed CFI taxonomy table is up to date with data/cfi.json
+cfi-check:
+    cargo run --bin generate_cfi_table --features codegen
+    cargo fmt
+    git diff --exit-code -- src/cfi/table.rs
+
 # Generate the third-party license report
 licenses-generate:
     cargo about generate about.hbs > third-party-licenses.html

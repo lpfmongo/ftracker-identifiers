@@ -5,12 +5,18 @@ edition = "2024"
 license = "MIT"
 repository = "https://github.com/lnivva/ftracker-identifiers"
 rust-version = "1.93.0"
+# The CFI taxonomy seed and its code generator are build-time tooling only; the committed
+# `src/cfi/table.rs` is what compiles, so downstream consumers never need them.
+exclude = ["/data", "/src/bin/generate_cfi_table.rs"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"], default-features = false, optional = true }
 schemars = { version = "1", default-features = false, optional = true }
 arbitrary = { version = "1", features = ["derive"], optional = true }
 proptest = { version = "1", default-features = false, optional = true }
+# Only used by the `generate_cfi_table` binary under the `codegen` feature (see `[[bin]]` below).
+# Off by default, so downstream builds never compile it.
+serde_json = { version = "1", optional = true }
 
 [dev-dependencies]
 criterion = "0.8.2"
@@ -31,6 +37,9 @@ schemars = ["dep:schemars", "serde"]
 arbitrary = ["dep:arbitrary"]
 proptest = ["dep:proptest"]
 
+# Internal build-time tooling only (the CFI table generator); not a downstream integration.
+codegen = ["dep:serde_json"]
+
 [[bench]]
 name = "cnpj_benches"
 harness = false
@@ -38,3 +47,14 @@ harness = false
 [[bench]]
 name = "isin_benches"
 harness = false
+
+[[bench]]
+name = "cfi_benches"
+harness = false
+
+# Build-time tooling: regenerates `src/cfi/table.rs` from `data/cfi.json`. Gated behind `codegen`
+# so it (and its `serde_json` dependency) is skipped by default and for downstream consumers.
+# Run via `just cfi-generate`.
+[[bin]]
+name = "generate_cfi_table"
+required-features = ["codegen"]

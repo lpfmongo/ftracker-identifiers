@@ -18,7 +18,13 @@
     - [Error Handling](./identifiers/isin/error-handling.md)
     - [Feature Flags](./identifiers/isin/feature-flags.md)
     - [Examples](./identifiers/isin/examples.md)
-- [CFI]()
+- [CFI](./identifiers/cfi/README.md)
+    - [Structure & Formats](./identifiers/cfi/format.md)
+    - [Parsing & Validation](./identifiers/cfi/parsing-and-validation.md)
+    - [Formatting & Display](./identifiers/cfi/formatting-and-display.md)
+    - [Error Handling](./identifiers/cfi/error-handling.md)
+    - [Feature Flags](./identifiers/cfi/feature-flags.md)
+    - [Examples](./identifiers/cfi/examples.md)
 
 ---
 
