@@ -116,6 +116,38 @@ mod traits {
     }
 
     #[test]
+    fn try_from_byte_array_matches_from_bytes() {
+        assert_eq!(
+            CountryCode::try_from(*b"US").unwrap(),
+            CountryCode::parse(SAMPLE).unwrap()
+        );
+    }
+
+    #[test]
+    fn try_from_byte_slice_validates_length() {
+        let good: &[u8] = b"US";
+        assert_eq!(
+            CountryCode::try_from(good).unwrap(),
+            CountryCode::parse(SAMPLE).unwrap()
+        );
+
+        let bad: &[u8] = b"USA";
+        assert_eq!(
+            CountryCode::try_from(bad),
+            Err(CountryCodeError::InvalidLength { found: 3 })
+        );
+    }
+
+    #[test]
+    fn partial_eq_with_str() {
+        let code = CountryCode::parse(SAMPLE).unwrap();
+        assert_eq!(code, "US");
+        assert_eq!(code, *"US");
+        assert_eq!("US", code);
+        assert_ne!(code, "BR");
+    }
+
+    #[test]
     fn as_ref_str_and_bytes() {
         let code = CountryCode::parse(SAMPLE).unwrap();
         let as_str: &str = code.as_ref();

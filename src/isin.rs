@@ -161,6 +161,7 @@ use core::str::{FromStr, from_utf8_unchecked};
 /// All of them run the same validation and return [`IsinError`] on failure. See the [module-level
 /// documentation](self) for the segment layout and design rationale.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[must_use = "a parsed Isin should be used; discarding it wastes the validation work"]
 pub struct Isin {
     bytes: [u8; 12],
 }
@@ -248,6 +249,7 @@ impl Isin {
     /// assert_eq!(isin.as_bytes(), b"US0378331005");
     /// ```
     #[inline]
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8; 12] {
         &self.bytes
     }
@@ -265,6 +267,7 @@ impl Isin {
     /// assert_eq!(isin.as_str(), "US0378331005");
     /// ```
     #[inline]
+    #[must_use]
     pub fn as_str(&self) -> &str {
         // SAFETY: `Isin::from_bytes` guarantees the bytes are ASCII letters and digits only.
         unsafe { from_utf8_unchecked(&self.bytes) }
@@ -281,8 +284,33 @@ impl Isin {
     /// assert_eq!(isin.country_code(), "US");
     /// ```
     #[inline]
+    #[must_use]
     pub fn country_code(&self) -> &str {
         &self.as_str()[0..2]
+    }
+
+    /// Returns the prefix (positions 1-2) as a validated [`CountryCode`](crate::CountryCode), or
+    /// `None` when it is not an officially assigned ISO 3166-1 alpha-2 code.
+    ///
+    /// An [`Isin`] only validates its prefix structurally (two uppercase letters), so it can carry
+    /// prefixes that ISO 6166 reserves but ISO 3166-1 does not assign. The most common are `XS`
+    /// (used by international clearing systems such as Euroclear and Clearstream), `EU` (European
+    /// Union supranational issues), and `QS`. For those, this returns `None` even though the
+    /// [`Isin`] itself is valid. Use [`Isin::country_code`] when you want the raw two letter prefix
+    /// regardless of assignment.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ftracker_identifiers::{Isin, CountryCode};
+    ///
+    /// let apple = Isin::parse("US0378331005").unwrap();
+    /// assert_eq!(apple.country(), Some(CountryCode::parse("US").unwrap()));
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn country(&self) -> Option<crate::CountryCode> {
+        crate::CountryCode::from_bytes([self.bytes[0], self.bytes[1]]).ok()
     }
 
     /// Returns the nine-character National Securities Identifying Number (positions 3–11).
@@ -296,6 +324,7 @@ impl Isin {
     /// assert_eq!(isin.nsin(), "037833100");
     /// ```
     #[inline]
+    #[must_use]
     pub fn nsin(&self) -> &str {
         &self.as_str()[2..11]
     }
@@ -313,6 +342,7 @@ impl Isin {
     /// assert_eq!(isin.check_digit(), 5);
     /// ```
     #[inline]
+    #[must_use]
     pub fn check_digit(&self) -> u8 {
         self.bytes[11] - b'0'
     }
@@ -332,6 +362,7 @@ impl Isin {
     /// assert_eq!(isin.computed_check_digit(), isin.check_digit());
     /// ```
     #[inline]
+    #[must_use]
     pub fn computed_check_digit(&self) -> u8 {
         validation::compute_check_digit(&self.bytes[..11])
     }
@@ -354,6 +385,55 @@ impl TryFrom<&str> for Isin {
     /// bounded by [`TryFrom<&str>`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::parse(value)
+    }
+}
+
+impl TryFrom<[u8; 12]> for Isin {
+    type Error = IsinError;
+
+    /// Delegates to [`Isin::from_bytes`]. The bytes must already be pre normalized uppercase ASCII.
+    fn try_from(value: [u8; 12]) -> Result<Self, Self::Error> {
+        Self::from_bytes(value)
+    }
+}
+
+impl TryFrom<&[u8]> for Isin {
+    type Error = IsinError;
+
+    /// Validates a byte slice as an ISIN. The slice must be exactly 12 pre normalized uppercase
+    /// ASCII bytes; any other length yields [`IsinError::InvalidLength`]. Once the length is
+    /// confirmed, this behaves like [`Isin::from_bytes`].
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let bytes: [u8; 12] = value
+            .try_into()
+            .map_err(|_| IsinError::InvalidLength { found: value.len() })?;
+        Self::from_bytes(bytes)
+    }
+}
+
+impl PartialEq<str> for Isin {
+    /// Compares against a string slice by its canonical 12 character representation.
+    fn eq(&self, other: &str) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl PartialEq<&str> for Isin {
+    /// Compares against a string slice by its canonical 12 character representation.
+    fn eq(&self, other: &&str) -> bool {
+        self.as_str() == *other
+    }
+}
+
+impl PartialEq<Isin> for str {
+    fn eq(&self, other: &Isin) -> bool {
+        self == other.as_str()
+    }
+}
+
+impl PartialEq<Isin> for &str {
+    fn eq(&self, other: &Isin) -> bool {
+        *self == other.as_str()
     }
 }
 

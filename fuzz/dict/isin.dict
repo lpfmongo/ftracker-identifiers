@@ -1,0 +1,9 @@
+# Country prefixes, full sample ISINs, and boundary characters for the checksum gate.
+"US"
+"GB"
+"DE"
+"US0378331005"
+"GB0002634946"
+"0"
+"9"
+"X"

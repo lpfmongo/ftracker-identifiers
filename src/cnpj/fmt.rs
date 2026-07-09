@@ -31,9 +31,11 @@ impl FormattedCnpj {
     ///
     /// This never allocates and never panics: the byte layout is built exclusively from [`Cnpj`]'s
     /// own validated ASCII bytes plus ASCII punctuation, which is guaranteed valid UTF-8.
+    #[must_use]
     pub fn as_str(&self) -> &str {
-        core::str::from_utf8(&self.0)
-            .expect("FormattedCnpj is built exclusively from validated ASCII bytes")
+        // SAFETY: `FormattedCnpj::new` builds this buffer exclusively from a validated `Cnpj`'s
+        // ASCII bytes interleaved with ASCII punctuation (`.`, `/`, `-`), so it is always UTF-8.
+        unsafe { core::str::from_utf8_unchecked(&self.0) }
     }
 }
 

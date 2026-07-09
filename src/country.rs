@@ -151,6 +151,7 @@ use core::str::{FromStr, from_utf8_unchecked};
 /// All of them run the same validation and return [`CountryCodeError`] on failure. See the
 /// [module level documentation](self) for the validation rules and design rationale.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[must_use = "a parsed CountryCode should be used; discarding it wastes the validation work"]
 pub struct CountryCode {
     bytes: [u8; 2],
 }
@@ -239,6 +240,7 @@ impl CountryCode {
     /// assert_eq!(code.as_bytes(), b"US");
     /// ```
     #[inline]
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8; 2] {
         &self.bytes
     }
@@ -256,6 +258,7 @@ impl CountryCode {
     /// assert_eq!(code.as_str(), "US");
     /// ```
     #[inline]
+    #[must_use]
     pub fn as_str(&self) -> &str {
         // SAFETY: `CountryCode::from_bytes` guarantees both bytes are uppercase ASCII letters.
         unsafe { from_utf8_unchecked(&self.bytes) }
@@ -279,6 +282,56 @@ impl TryFrom<&str> for CountryCode {
     /// generic code bounded by [`TryFrom<&str>`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::parse(value)
+    }
+}
+
+impl TryFrom<[u8; 2]> for CountryCode {
+    type Error = CountryCodeError;
+
+    /// Delegates to [`CountryCode::from_bytes`]. The two bytes must already be pre normalized
+    /// uppercase ASCII letters.
+    fn try_from(value: [u8; 2]) -> Result<Self, Self::Error> {
+        Self::from_bytes(value)
+    }
+}
+
+impl TryFrom<&[u8]> for CountryCode {
+    type Error = CountryCodeError;
+
+    /// Validates a byte slice as a country code. The slice must be exactly two pre normalized
+    /// uppercase ASCII bytes; any other length yields [`CountryCodeError::InvalidLength`]. Once the
+    /// length is confirmed, this behaves like [`CountryCode::from_bytes`].
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let bytes: [u8; 2] = value
+            .try_into()
+            .map_err(|_| CountryCodeError::InvalidLength { found: value.len() })?;
+        Self::from_bytes(bytes)
+    }
+}
+
+impl PartialEq<str> for CountryCode {
+    /// Compares against a string slice by its canonical two letter representation.
+    fn eq(&self, other: &str) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl PartialEq<&str> for CountryCode {
+    /// Compares against a string slice by its canonical two letter representation.
+    fn eq(&self, other: &&str) -> bool {
+        self.as_str() == *other
+    }
+}
+
+impl PartialEq<CountryCode> for str {
+    fn eq(&self, other: &CountryCode) -> bool {
+        self == other.as_str()
+    }
+}
+
+impl PartialEq<CountryCode> for &str {
+    fn eq(&self, other: &CountryCode) -> bool {
+        *self == other.as_str()
     }
 }
 

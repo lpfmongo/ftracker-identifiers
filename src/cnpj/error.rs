@@ -1,5 +1,9 @@
 use core::fmt;
 
+/// The set of characters permitted at a given position of a CNPJ.
+///
+/// Reported by [`CnpjError::InvalidCharacter`] to describe what was expected where an invalid
+/// character was found.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CharacterClass {
     /// An ASCII digit, `'0'...='9'`.
@@ -19,6 +23,10 @@ impl fmt::Display for CharacterClass {
     }
 }
 
+/// The error returned when a [`Cnpj`](crate::Cnpj) fails to parse or validate.
+///
+/// Each variant corresponds to one validation rule, in the order the rules are applied. See the
+/// [module level documentation](crate::cnpj) for the full rule list.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CnpjError {

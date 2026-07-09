@@ -38,3 +38,4 @@
 # Contributing
 
 - [Adding a New Identifier](./contributing/adding-a-new-identifier.md)
+- [Fuzzing](./contributing/fuzzing.md)
