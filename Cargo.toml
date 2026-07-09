@@ -35,7 +35,10 @@ std = [
 serde = ["dep:serde"]
 schemars = ["dep:schemars", "serde"]
 arbitrary = ["dep:arbitrary"]
-proptest = ["dep:proptest"]
+# `proptest/alloc` (allocation) and `proptest/no_std` (libm-backed float math) let the strategies
+# build under `no_std`. The `std` feature above additionally turns on `proptest/std` when the
+# standard library is available, which supersedes the libm math paths.
+proptest = ["dep:proptest", "proptest/alloc", "proptest/no_std"]
 
 # Internal build-time tooling only (the CFI table generator); not a downstream integration.
 codegen = ["dep:serde_json"]
@@ -50,6 +53,10 @@ harness = false
 
 [[bench]]
 name = "cfi_benches"
+harness = false
+
+[[bench]]
+name = "country_benches"
 harness = false
 
 # Build-time tooling: regenerates `src/cfi/table.rs` from `data/cfi.json`. Gated behind `codegen`

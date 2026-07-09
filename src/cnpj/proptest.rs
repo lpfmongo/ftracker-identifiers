@@ -4,10 +4,10 @@
 //! `proptest` feature, so consumers can property-test code that takes a `Cnpj` without
 //! hand-rolling a checksum-valid generator.
 
-use super::validation::{avoid_all_repeated, compute_valid_check_digits, BASE_LEN};
 use super::Cnpj;
+use super::validation::{BASE_LEN, avoid_all_repeated, compute_valid_check_digits};
 use alloc::string::{String, ToString};
-use proptest::prelude::{prop, Strategy};
+use proptest::prelude::{Strategy, prop};
 
 const ALPHABET: &[u8; 36] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 

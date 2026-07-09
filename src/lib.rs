@@ -12,3 +12,7 @@ pub use isin::{Isin, IsinError};
 pub mod cfi;
 #[doc(inline)]
 pub use cfi::{Cfi, CfiError};
+
+pub mod country;
+#[doc(inline)]
+pub use country::{CountryCode, CountryCodeError};
