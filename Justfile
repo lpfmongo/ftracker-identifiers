@@ -60,6 +60,7 @@ fuzz-build:
 # Run a fuzz target for a bounded time (requires cargo-fuzz + nightly).
 # Example: `just fuzz country_code` or `just fuzz cfi 120`. Targets: country_code, cfi, isin, cnpj.
 fuzz target time="60":
+    mkdir -p fuzz/corpus/{{target}}
     cargo +nightly fuzz run {{target}} fuzz/corpus/{{target}} fuzz/seeds/{{target}} -- -dict=fuzz/dict/{{target}}.dict -max_total_time={{time}}
 
 # Show line coverage of a fuzz target over its corpus, then print a summary report.
@@ -67,13 +68,20 @@ fuzz target time="60":
 fuzz-coverage target:
     #!/usr/bin/env bash
     set -euo pipefail
+    # The corpus directory is gitignored, so recreate it if a fresh checkout lacks it.
+    mkdir -p fuzz/corpus/{{target}}
     cargo +nightly fuzz coverage {{target}} fuzz/corpus/{{target}} fuzz/seeds/{{target}}
     triple="$(rustc +nightly -vV | sed -n 's/host: //p')"
     llvm_cov="$(rustc +nightly --print sysroot)/lib/rustlib/${triple}/bin/llvm-cov"
+    # Map the fuzz target name to its source module (they differ for country_code -> country).
+    case "{{target}}" in
+        country_code) module="country" ;;
+        *) module="{{target}}" ;;
+    esac
     "${llvm_cov}" report \
         "target/${triple}/coverage/${triple}/release/{{target}}" \
         -instr-profile="fuzz/coverage/{{target}}/coverage.profdata" \
-        -sources "src/{{target}}.rs" "src/{{target}}"
+        -sources "src/${module}.rs" "src/${module}"
 
 # Run all workspace tests
 test: clean

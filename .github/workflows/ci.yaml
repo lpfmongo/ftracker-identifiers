@@ -46,6 +46,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+      - uses: Swatinem/rust-cache@v2
       - name: Run Clippy
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
@@ -55,6 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - name: Run tests (all features)
         run: cargo test --workspace --all-features --verbose
 
@@ -64,6 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - name: Build without default features
         run: cargo build --no-default-features
       - name: Build without default features (all optional integrations)
@@ -75,8 +78,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@1.93.0
+      - uses: Swatinem/rust-cache@v2
       - name: Build on MSRV
-        run: cargo build --all-features
+        run: cargo build --locked --all-features
 
   cfi-table:
     name: CFI table in sync
