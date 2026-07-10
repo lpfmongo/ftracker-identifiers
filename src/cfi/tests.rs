@@ -132,6 +132,35 @@ mod traits {
     }
 
     #[test]
+    fn try_from_byte_array_matches_from_bytes() {
+        assert_eq!(
+            Cfi::try_from(*b"ESVUFR").unwrap(),
+            Cfi::parse(EQUITY).unwrap()
+        );
+    }
+
+    #[test]
+    fn try_from_byte_slice_validates_length() {
+        let good: &[u8] = b"ESVUFR";
+        assert_eq!(Cfi::try_from(good).unwrap(), Cfi::parse(EQUITY).unwrap());
+
+        let bad: &[u8] = b"ESV";
+        assert_eq!(
+            Cfi::try_from(bad),
+            Err(CfiError::InvalidLength { found: 3 })
+        );
+    }
+
+    #[test]
+    fn partial_eq_with_str() {
+        let cfi = Cfi::parse(EQUITY).unwrap();
+        assert_eq!(cfi, "ESVUFR");
+        assert_eq!(cfi, *"ESVUFR");
+        assert_eq!("ESVUFR", cfi);
+        assert_ne!(cfi, "DBFTFB");
+    }
+
+    #[test]
     fn as_ref_str_and_bytes() {
         let cfi = Cfi::parse(EQUITY).unwrap();
         let as_str: &str = cfi.as_ref();

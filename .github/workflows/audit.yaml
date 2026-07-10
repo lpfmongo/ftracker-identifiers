@@ -29,6 +29,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions-rust-lang/audit@v1
         name: Audit Rust Dependencies

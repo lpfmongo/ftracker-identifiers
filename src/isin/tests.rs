@@ -174,6 +174,48 @@ mod trait_impls {
     }
 
     #[test]
+    fn try_from_byte_array_delegates_to_from_bytes() {
+        let a = Isin::try_from(*b"US0378331005").unwrap();
+        assert_eq!(a, Isin::parse(APPLE).unwrap());
+    }
+
+    #[test]
+    fn try_from_byte_slice_validates_length() {
+        let good: &[u8] = b"US0378331005";
+        assert_eq!(Isin::try_from(good).unwrap(), Isin::parse(APPLE).unwrap());
+
+        let short: &[u8] = b"US03783310";
+        assert_eq!(
+            Isin::try_from(short),
+            Err(IsinError::InvalidLength { found: 10 })
+        );
+    }
+
+    #[test]
+    fn partial_eq_with_str() {
+        let isin = Isin::parse(APPLE).unwrap();
+        assert_eq!(isin, *"US0378331005");
+        assert_eq!(isin, "US0378331005");
+        assert_eq!("US0378331005", isin);
+        assert_ne!(isin, "US0000000000");
+    }
+
+    #[test]
+    fn country_maps_assigned_prefix() {
+        use crate::CountryCode;
+        let isin = Isin::parse(APPLE).unwrap();
+        assert_eq!(isin.country(), Some(CountryCode::parse("US").unwrap()));
+    }
+
+    #[test]
+    fn country_is_none_for_unassigned_prefix() {
+        // `XS` is a valid ISIN prefix (Euroclear/Clearstream) but not an assigned ISO 3166-1 code.
+        let isin = Isin::parse("XS0000198795").unwrap();
+        assert_eq!(isin.country_code(), "XS");
+        assert_eq!(isin.country(), None);
+    }
+
+    #[test]
     fn as_ref_bytes_matches_as_bytes() {
         let isin = Isin::parse(APPLE).unwrap();
         let as_ref: &[u8] = isin.as_ref();

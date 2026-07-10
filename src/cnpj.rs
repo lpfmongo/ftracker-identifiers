@@ -186,6 +186,7 @@ use core::str::{FromStr, from_utf8_unchecked};
 /// All of them run the same validation and return [`CnpjError`] on failure. See the [module-level
 /// documentation](self) for the field layout, format history, and design rationale.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[must_use = "a parsed Cnpj should be used; discarding it wastes the validation work"]
 pub struct Cnpj {
     bytes: [u8; 14],
 }
@@ -283,6 +284,7 @@ impl Cnpj {
     /// ```
     #[doc(alias = "digits")]
     #[inline]
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8; 14] {
         &self.bytes
     }
@@ -300,6 +302,7 @@ impl Cnpj {
     /// assert_eq!(cnpj.as_str(), "00000000000191");
     /// ```
     #[inline]
+    #[must_use]
     pub fn as_str(&self) -> &str {
         // SAFETY: The bytes array is strictly guaranteed to contain only
         // valid ASCII uppercase alphanumeric characters by `Cnpj::from_bytes`.
@@ -321,6 +324,7 @@ impl Cnpj {
     /// assert_eq!(cnpj.to_string(), cnpj.formatted().as_str());
     /// ```
     #[inline]
+    #[must_use]
     pub fn formatted(&self) -> FormattedCnpj {
         FormattedCnpj::new(self)
     }
@@ -338,6 +342,7 @@ impl Cnpj {
     /// assert_eq!(cnpj.root(), "00000000");
     /// ```
     #[inline]
+    #[must_use]
     pub fn root(&self) -> &str {
         &self.as_str()[0..8]
     }
@@ -355,6 +360,7 @@ impl Cnpj {
     /// assert_eq!(cnpj.branch_code(), "0002");
     /// ```
     #[inline]
+    #[must_use]
     pub fn branch_code(&self) -> &str {
         &self.as_str()[8..12]
     }
@@ -370,6 +376,7 @@ impl Cnpj {
     /// assert!(!Cnpj::parse("11.222.333/0002-62").unwrap().is_root());
     /// ```
     #[inline]
+    #[must_use]
     pub fn is_root(&self) -> bool {
         self.branch_code() == "0001"
     }
@@ -392,6 +399,7 @@ impl Cnpj {
     /// assert_eq!(alphanumeric_branch.branch_code(), "01DE");
     /// assert_eq!(alphanumeric_branch.branch_number(), None);
     /// ```
+    #[must_use]
     pub fn branch_number(&self) -> Option<u16> {
         self.branch_code().parse().ok()
     }
@@ -407,6 +415,7 @@ impl Cnpj {
     /// assert_eq!(cnpj.check_digits(), (9, 1));
     /// ```
     #[inline]
+    #[must_use]
     pub fn check_digits(&self) -> (u8, u8) {
         (self.bytes[12] - b'0', self.bytes[13] - b'0')
     }
@@ -429,6 +438,58 @@ impl TryFrom<&str> for Cnpj {
     /// bounded by [`TryFrom<&str>`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::parse(value)
+    }
+}
+
+impl TryFrom<[u8; 14]> for Cnpj {
+    type Error = CnpjError;
+
+    /// Delegates to [`Cnpj::from_bytes`]. The bytes must already be pre normalized ASCII, without
+    /// punctuation.
+    fn try_from(value: [u8; 14]) -> Result<Self, Self::Error> {
+        Self::from_bytes(value)
+    }
+}
+
+impl TryFrom<&[u8]> for Cnpj {
+    type Error = CnpjError;
+
+    /// Validates a byte slice as a CNPJ. The slice must be exactly 14 pre normalized ASCII bytes,
+    /// without punctuation; any other length yields [`CnpjError::InvalidLength`]. Once the length is
+    /// confirmed, this behaves like [`Cnpj::from_bytes`].
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let bytes: [u8; 14] = value
+            .try_into()
+            .map_err(|_| CnpjError::InvalidLength { found: value.len() })?;
+        Self::from_bytes(bytes)
+    }
+}
+
+impl PartialEq<str> for Cnpj {
+    /// Compares against a string slice by its compact 14 character representation (not the
+    /// punctuated form).
+    fn eq(&self, other: &str) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl PartialEq<&str> for Cnpj {
+    /// Compares against a string slice by its compact 14 character representation (not the
+    /// punctuated form).
+    fn eq(&self, other: &&str) -> bool {
+        self.as_str() == *other
+    }
+}
+
+impl PartialEq<Cnpj> for str {
+    fn eq(&self, other: &Cnpj) -> bool {
+        self == other.as_str()
+    }
+}
+
+impl PartialEq<Cnpj> for &str {
+    fn eq(&self, other: &Cnpj) -> bool {
+        *self == other.as_str()
     }
 }
 

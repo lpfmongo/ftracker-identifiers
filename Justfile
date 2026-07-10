@@ -24,7 +24,7 @@ build-ci: clean
 # Build the workspace (developer environment)
 build: clean
     cargo build --workspace --verbose
-    cargo tarpaulin --fail-under 30
+    cargo tarpaulin --fail-under 65
 
 # Regenerate the committed CFI taxonomy table from data/cfi.json
 cfi-generate:
@@ -52,6 +52,36 @@ deny-check:
 
 # Run the full dependency and license policy suite
 policy-check: licenses-check deny-check
+
+# Build every fuzz target (requires `cargo install cargo-fuzz` and a nightly toolchain)
+fuzz-build:
+    cargo +nightly fuzz build
+
+# Run a fuzz target for a bounded time (requires cargo-fuzz + nightly).
+# Example: `just fuzz country_code` or `just fuzz cfi 120`. Targets: country_code, cfi, isin, cnpj.
+fuzz target time="60":
+    mkdir -p fuzz/corpus/{{target}}
+    cargo +nightly fuzz run {{target}} fuzz/corpus/{{target}} fuzz/seeds/{{target}} -- -dict=fuzz/dict/{{target}}.dict -max_total_time={{time}}
+
+# Show line coverage of a fuzz target over its corpus, then print a summary report.
+# Requires cargo-fuzz + nightly + llvm-tools.
+fuzz-coverage target:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # The corpus directory is gitignored, so recreate it if a fresh checkout lacks it.
+    mkdir -p fuzz/corpus/{{target}}
+    cargo +nightly fuzz coverage {{target}} fuzz/corpus/{{target}} fuzz/seeds/{{target}}
+    triple="$(rustc +nightly -vV | sed -n 's/host: //p')"
+    llvm_cov="$(rustc +nightly --print sysroot)/lib/rustlib/${triple}/bin/llvm-cov"
+    # Map the fuzz target name to its source module (they differ for country_code -> country).
+    case "{{target}}" in
+        country_code) module="country" ;;
+        *) module="{{target}}" ;;
+    esac
+    "${llvm_cov}" report \
+        "target/${triple}/coverage/${triple}/release/{{target}}" \
+        -instr-profile="fuzz/coverage/{{target}}/coverage.profdata" \
+        -sources "src/${module}.rs" "src/${module}"
 
 # Run all workspace tests
 test: clean

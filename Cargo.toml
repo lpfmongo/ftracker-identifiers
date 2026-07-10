@@ -5,9 +5,14 @@ edition = "2024"
 license = "MIT"
 repository = "https://github.com/lnivva/ftracker-identifiers"
 rust-version = "1.93.0"
+description = "Validated, no_std-first identifier types: CNPJ, ISIN, CFI, and ISO 3166-1 country codes."
+readme = "README.md"
+documentation = "https://docs.rs/ftracker-identifiers"
+keywords = ["cnpj", "isin", "cfi", "iso3166", "no_std"]
+categories = ["parser-implementations", "no-std", "data-structures", "finance"]
 # The CFI taxonomy seed and its code generator are build-time tooling only; the committed
 # `src/cfi/table.rs` is what compiles, so downstream consumers never need them.
-exclude = ["/data", "/src/bin/generate_cfi_table.rs"]
+exclude = ["/data", "/src/bin/generate_cfi_table.rs", "/fuzz"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"], default-features = false, optional = true }
@@ -35,10 +40,19 @@ std = [
 serde = ["dep:serde"]
 schemars = ["dep:schemars", "serde"]
 arbitrary = ["dep:arbitrary"]
-proptest = ["dep:proptest"]
+# `proptest/alloc` (allocation) and `proptest/no_std` (libm-backed float math) let the strategies
+# build under `no_std`. The `std` feature above additionally turns on `proptest/std` when the
+# standard library is available, which supersedes the libm math paths.
+proptest = ["dep:proptest", "proptest/alloc", "proptest/no_std"]
 
 # Internal build-time tooling only (the CFI table generator); not a downstream integration.
 codegen = ["dep:serde_json"]
+
+# Build the docs.rs documentation with every optional integration enabled, so the feature-gated
+# `serde`/`schemars`/`arbitrary`/`proptest` items appear in the rendered API docs.
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [[bench]]
 name = "cnpj_benches"
@@ -50,6 +64,10 @@ harness = false
 
 [[bench]]
 name = "cfi_benches"
+harness = false
+
+[[bench]]
+name = "country_benches"
 harness = false
 
 # Build-time tooling: regenerates `src/cfi/table.rs` from `data/cfi.json`. Gated behind `codegen`

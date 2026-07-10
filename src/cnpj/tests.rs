@@ -173,6 +173,37 @@ mod trait_impls {
     }
 
     #[test]
+    fn try_from_byte_array_delegates_to_from_bytes() {
+        let a = Cnpj::try_from(*b"00000000000191").unwrap();
+        assert_eq!(a, Cnpj::parse(NUMERIC_ROOT).unwrap());
+    }
+
+    #[test]
+    fn try_from_byte_slice_validates_length() {
+        let good: &[u8] = b"00000000000191";
+        assert_eq!(
+            Cnpj::try_from(good).unwrap(),
+            Cnpj::parse(NUMERIC_ROOT).unwrap()
+        );
+
+        let short: &[u8] = b"000000000001";
+        assert_eq!(
+            Cnpj::try_from(short),
+            Err(CnpjError::InvalidLength { found: 12 })
+        );
+    }
+
+    #[test]
+    fn partial_eq_with_str_uses_compact_form() {
+        let cnpj = Cnpj::parse(NUMERIC_ROOT).unwrap();
+        assert_eq!(cnpj, "00000000000191");
+        assert_eq!(cnpj, *"00000000000191");
+        assert_eq!("00000000000191", cnpj);
+        // The punctuated form is not what `PartialEq<str>` compares against.
+        assert_ne!(cnpj, "00.000.000/0001-91");
+    }
+
+    #[test]
     fn as_ref_bytes_matches_as_bytes() {
         let cnpj = Cnpj::parse(NUMERIC_ROOT).unwrap();
         let as_ref: &[u8] = cnpj.as_ref();

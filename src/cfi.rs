@@ -169,6 +169,7 @@ use core::str::{FromStr, from_utf8_unchecked};
 /// All of them run the same validation and return [`CfiError`] on failure.
 /// See the [module-level documentation](self) for the segment layout and design rationale.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[must_use = "a parsed Cfi should be used; discarding it wastes the validation work"]
 pub struct Cfi {
     bytes: [u8; 6],
 }
@@ -256,6 +257,7 @@ impl Cfi {
     /// assert_eq!(cfi.as_bytes(), b"ESVUFR");
     /// ```
     #[inline]
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8; 6] {
         &self.bytes
     }
@@ -273,6 +275,7 @@ impl Cfi {
     /// assert_eq!(cfi.as_str(), "ESVUFR");
     /// ```
     #[inline]
+    #[must_use]
     pub fn as_str(&self) -> &str {
         // SAFETY: `Cfi::from_bytes` guarantees every byte is an uppercase ASCII letter.
         unsafe { from_utf8_unchecked(&self.bytes) }
@@ -289,6 +292,7 @@ impl Cfi {
     /// assert_eq!(cfi.category(), 'E');
     /// ```
     #[inline]
+    #[must_use]
     pub fn category(&self) -> char {
         self.bytes[0] as char
     }
@@ -304,6 +308,7 @@ impl Cfi {
     /// assert_eq!(cfi.group(), 'S');
     /// ```
     #[inline]
+    #[must_use]
     pub fn group(&self) -> char {
         self.bytes[1] as char
     }
@@ -319,6 +324,7 @@ impl Cfi {
     /// assert_eq!(cfi.attributes(), ['V', 'U', 'F', 'R']);
     /// ```
     #[inline]
+    #[must_use]
     pub fn attributes(&self) -> [char; 4] {
         [
             self.bytes[2] as char,
@@ -346,6 +352,56 @@ impl TryFrom<&str> for Cfi {
     /// by [`TryFrom<&str>`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::parse(value)
+    }
+}
+
+impl TryFrom<[u8; 6]> for Cfi {
+    type Error = CfiError;
+
+    /// Delegates to [`Cfi::from_bytes`]. The bytes must already be pre normalized uppercase ASCII
+    /// letters.
+    fn try_from(value: [u8; 6]) -> Result<Self, Self::Error> {
+        Self::from_bytes(value)
+    }
+}
+
+impl TryFrom<&[u8]> for Cfi {
+    type Error = CfiError;
+
+    /// Validates a byte slice as a CFI. The slice must be exactly 6 pre normalized uppercase ASCII
+    /// bytes; any other length yields [`CfiError::InvalidLength`]. Once the length is confirmed,
+    /// this behaves like [`Cfi::from_bytes`].
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let bytes: [u8; 6] = value
+            .try_into()
+            .map_err(|_| CfiError::InvalidLength { found: value.len() })?;
+        Self::from_bytes(bytes)
+    }
+}
+
+impl PartialEq<str> for Cfi {
+    /// Compares against a string slice by its canonical 6 character representation.
+    fn eq(&self, other: &str) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl PartialEq<&str> for Cfi {
+    /// Compares against a string slice by its canonical 6 character representation.
+    fn eq(&self, other: &&str) -> bool {
+        self.as_str() == *other
+    }
+}
+
+impl PartialEq<Cfi> for str {
+    fn eq(&self, other: &Cfi) -> bool {
+        self == other.as_str()
+    }
+}
+
+impl PartialEq<Cfi> for &str {
+    fn eq(&self, other: &Cfi) -> bool {
+        *self == other.as_str()
     }
 }
 
