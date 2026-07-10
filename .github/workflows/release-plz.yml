@@ -1,0 +1,86 @@
+name: Release-plz
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  # Release unpublished versions: create the git tag, publish to crates.io via
+  # Trusted Publishing (OIDC), and create the GitHub Release.
+  release-plz-release:
+    name: Release-plz release
+    runs-on: ubuntu-latest
+    # Only run on the canonical repository; no-op on forks.
+    if: ${{ github.repository_owner == 'lnivva' }}
+    permissions:
+      # Push tags and create GitHub Releases.
+      contents: write
+      # Detect the release PR and its commits.
+      pull-requests: read
+      # Required for crates.io Trusted Publishing (OIDC). No CARGO_REGISTRY_TOKEN needed.
+      id-token: write
+    steps:
+      - name: Generate GitHub App token
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run release-plz
+        uses: release-plz/action@v0.5
+        with:
+          command: release
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
+  # Prepare the next release: open/update a PR that bumps the version and
+  # updates the changelog from Conventional Commits.
+  release-plz-pr:
+    name: Release-plz PR
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'lnivva' }}
+    permissions:
+      # Push to the release PR branch.
+      contents: write
+      # Create and update pull requests.
+      pull-requests: write
+    concurrency:
+      group: release-plz-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Generate GitHub App token
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run release-plz
+        uses: release-plz/action@v0.5
+        with:
+          command: release-pr
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}

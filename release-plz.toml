@@ -1,0 +1,14 @@
+[workspace]
+# Create a GitHub Release for each published version.
+git_release_enable = true
+# Create an annotated git tag for each release (protected by the `v*` tag ruleset).
+git_tag_enable = true
+git_tag_name = "v{{ version }}"
+git_release_name = "v{{ version }}"
+# Keep a Changelog-style changelog, maintained from Conventional Commits.
+changelog_update = true
+# Fail the release PR if a change breaks semver without a matching version bump.
+semver_check = true
+
+[[package]]
+name = "ftracker-identifiers"
