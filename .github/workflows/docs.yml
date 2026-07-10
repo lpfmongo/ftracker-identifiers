@@ -1,12 +1,10 @@
 name: Docs Site
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-      - '.github/workflows/docs.yml'
+  # Publish the guide whenever a release is created (release-plz publishes a
+  # GitHub Release for each version). Keeps the site aligned with crates.io.
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
