@@ -121,3 +121,23 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Build documentation
         run: cargo doc --all-features --no-deps
+
+  fuzz:
+    name: Fuzz build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # cargo-fuzz requires a nightly toolchain.
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          # The fuzz crate detaches from the workspace; cache it separately.
+          workspaces: fuzz
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      # Compile-check every fuzz target. Deterministic and fast; catches API
+      # or target breakage without a nondeterministic bounded run.
+      - name: Build fuzz targets
+        run: cargo +nightly fuzz build
