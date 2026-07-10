@@ -1,0 +1,155 @@
+name: Release Fuzz Gate
+
+# Runs a bounded fuzzing session on every release PR opened by release-plz, then
+# writes a small report to the job summary and posts it as a comment on the PR.
+# This gates the release: the PR should only be merged once this succeeds.
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: release-fuzz-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: Fuzz release candidate
+    runs-on: ubuntu-latest
+    # Only run on release-plz's release PRs (branch prefix `release-plz-`).
+    if: ${{ startsWith(github.head_ref, 'release-plz-') }}
+    permissions:
+      contents: read
+      # Post / update the report comment on the PR.
+      pull-requests: write
+    env:
+      # Seconds of fuzzing per target.
+      FUZZ_SECONDS: '60'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # cargo-fuzz requires a nightly toolchain.
+      - uses: dtolnay/rust-toolchain@nightly
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          # The fuzz crate detaches from the workspace; cache it separately.
+          workspaces: fuzz
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Run bounded fuzzing
+        id: fuzz
+        run: |
+          set -euo pipefail
+          targets=(cnpj isin cfi country_code)
+          mkdir -p fuzz/reports
+          report=fuzz/reports/summary.md
+          overall=0
+
+          {
+            echo "## Release fuzz report"
+            echo
+            echo "Bounded fuzzing (\`${FUZZ_SECONDS}s\` per target) over the committed seed corpus."
+            echo
+            echo "| Target | Result | Execs | Duration |"
+            echo "| ------ | ------ | ----- | -------- |"
+          } > "$report"
+
+          for t in "${targets[@]}"; do
+            echo "::group::Fuzzing $t"
+            mkdir -p "fuzz/corpus/$t"
+            log="fuzz/reports/$t.log"
+            start=$(date +%s)
+            status="pass"
+            if ! cargo +nightly fuzz run "$t" "fuzz/corpus/$t" "fuzz/seeds/$t" \
+                -- -dict="fuzz/dict/$t.dict" -max_total_time="${FUZZ_SECONDS}" \
+                > "$log" 2>&1; then
+              status="fail"
+              overall=1
+            fi
+            end=$(date +%s)
+            elapsed=$((end - start))
+
+            # Extract the last reported total exec count from libFuzzer output (best effort).
+            execs=$(grep -oE '#[0-9]+' "$log" | tail -n1 | tr -d '#' || true)
+            execs=${execs:-n/a}
+
+            if [ "$status" = "pass" ]; then
+              echo "| \`$t\` | ✅ pass | $execs | ${elapsed}s |" >> "$report"
+            else
+              echo "| \`$t\` | ❌ **fail** | $execs | ${elapsed}s |" >> "$report"
+              {
+                echo
+                echo "<details><summary>Failure output: <code>$t</code></summary>"
+                echo
+                echo '```'
+                tail -n 40 "$log"
+                echo '```'
+                echo
+                echo "</details>"
+              } >> "$report"
+            fi
+            echo "::endgroup::"
+          done
+
+          {
+            echo
+            if [ "$overall" -eq 0 ]; then
+              echo "**All targets passed.** No crashes found within the time budget."
+            else
+              echo "**Fuzzing found a failure.** Do not merge this release PR until resolved."
+            fi
+          } >> "$report"
+
+          # Publish to the job summary.
+          cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          echo "overall=$overall" >> "$GITHUB_OUTPUT"
+
+      - name: Comment report on PR
+        if: ${{ always() }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- release-fuzz-report -->';
+            let body;
+            try {
+              body = fs.readFileSync('fuzz/reports/summary.md', 'utf8');
+            } catch (e) {
+              body = '## Release fuzz report\n\nThe fuzzing step did not produce a report (it may have failed to start).';
+            }
+            body = `${marker}\n${body}`;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Upload crash artifacts
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts
+          path: |
+            fuzz/artifacts/**
+            fuzz/reports/**
+          if-no-files-found: ignore
+
+      - name: Fail if fuzzing found a crash
+        if: ${{ steps.fuzz.outputs.overall != '0' }}
+        run: exit 1
