@@ -1,8 +1,11 @@
 name: Release Fuzz Gate
 
-# Runs a bounded fuzzing session on every release PR opened by release-plz, then
+# Runs a bounded fuzzing session on release PRs opened by release-plz, then
 # writes a small report to the job summary and posts it as a comment on the PR.
 # This gates the release: the PR should only be merged once this succeeds.
+#
+# The job runs on every PR (so it can be a required status check) but only
+# fuzzes on release-plz release PRs; other PRs are a fast no-op that passes.
 on:
   pull_request:
     branches:
@@ -19,8 +22,9 @@ jobs:
   fuzz:
     name: Fuzz release candidate
     runs-on: ubuntu-latest
-    # Only run on release-plz's release PRs (branch prefix `release-plz-`).
-    if: ${{ startsWith(github.head_ref, 'release-plz-') }}
+    # NOTE: this job always runs (no job-level `if`) so it can be marked as a
+    # required status check. The heavy fuzzing steps only run on release-plz
+    # release PRs; on any other PR the job is a fast no-op that reports success.
     permissions:
       contents: read
       # Post / update the report comment on the PR.
@@ -29,23 +33,42 @@ jobs:
       # Seconds of fuzzing per target.
       FUZZ_SECONDS: '60'
     steps:
-      - uses: actions/checkout@v7
+      # Decide whether this is a release PR (branch prefix `release-plz-`).
+      - name: Detect release PR
+        id: detect
+        run: |
+          if [[ "${{ github.head_ref }}" == release-plz-* ]]; then
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+            echo "Not a release PR; skipping fuzzing (no-op pass)."
+          fi
+
+      - name: Checkout repository
+        if: ${{ steps.detect.outputs.is_release == 'true' }}
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       # cargo-fuzz requires a nightly toolchain.
-      - uses: dtolnay/rust-toolchain@nightly
+      - name: Install Rust nightly
+        if: ${{ steps.detect.outputs.is_release == 'true' }}
+        uses: dtolnay/rust-toolchain@nightly
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Cache fuzz build
+        if: ${{ steps.detect.outputs.is_release == 'true' }}
+        uses: Swatinem/rust-cache@v2
         with:
           # The fuzz crate detaches from the workspace; cache it separately.
           workspaces: fuzz
 
       - name: Install cargo-fuzz
+        if: ${{ steps.detect.outputs.is_release == 'true' }}
         run: cargo install cargo-fuzz --locked
 
       - name: Run bounded fuzzing
         id: fuzz
+        if: ${{ steps.detect.outputs.is_release == 'true' }}
         run: |
           set -euo pipefail
           targets=(cnpj isin cfi country_code)
@@ -113,7 +136,7 @@ jobs:
           echo "overall=$overall" >> "$GITHUB_OUTPUT"
 
       - name: Comment report on PR
-        if: ${{ always() }}
+        if: ${{ always() && steps.detect.outputs.is_release == 'true' }}
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -141,7 +164,7 @@ jobs:
             }
 
       - name: Upload crash artifacts
-        if: ${{ failure() }}
+        if: ${{ failure() && steps.detect.outputs.is_release == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: fuzz-artifacts
@@ -151,5 +174,5 @@ jobs:
           if-no-files-found: ignore
 
       - name: Fail if fuzzing found a crash
-        if: ${{ steps.fuzz.outputs.overall != '0' }}
+        if: ${{ steps.detect.outputs.is_release == 'true' && steps.fuzz.outputs.overall != '0' }}
         run: exit 1
