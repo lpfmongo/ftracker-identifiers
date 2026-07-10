@@ -13,12 +13,15 @@ Validated, `no_std`-first identifier types for Rust. It is:
   performs parsing, validation, and every accessor on the stack.
 
 [![Build Status][actions-badge]][actions-url]
+[![Crates.io][crates-badge]][crates-url]
 [![MIT licensed][mit-badge]][mit-url]
 [![MSRV][msrv-badge]][msrv-url]
 [![API Docs][docs-badge]][docs-url]
 
 [actions-badge]: https://github.com/lnivva/ftracker-identifiers/workflows/CI/badge.svg
 [actions-url]: https://github.com/lnivva/ftracker-identifiers/actions?query=workflow%3ACI+branch%3Amain
+[crates-badge]: https://img.shields.io/crates/v/ftracker-identifiers.svg
+[crates-url]: https://crates.io/crates/ftracker-identifiers
 [mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [mit-url]: https://github.com/lnivva/ftracker-identifiers/blob/main/LICENSE
 [msrv-badge]: https://img.shields.io/badge/rustc-1.93.0+-blue.svg
@@ -27,6 +30,7 @@ Validated, `no_std`-first identifier types for Rust. It is:
 [docs-url]: https://docs.rs/ftracker-identifiers
 
 [API Docs](https://docs.rs/ftracker-identifiers) |
+[Guide](https://lnivva.github.io/ftracker-identifiers) |
 [Contributing](#contributing)
 
 ## Overview

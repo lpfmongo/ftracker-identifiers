@@ -1,6 +1,6 @@
 [book]
 title = "FTracker Identifiers"
-description = "Validated Rust types for financial and regulatory identifiers: CNPJ today, ISIN and CFI planned."
+description = "Validated, no_std-first Rust types for financial and regulatory identifiers: CNPJ, ISIN, CFI, and ISO 3166-1 country codes."
 authors = ["Leonardo Freitas"]
 language = "en"
 src = "src"
