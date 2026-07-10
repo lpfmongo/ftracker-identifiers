@@ -50,12 +50,19 @@ sample codes, boundary punctuation) that steer the mutator toward interesting in
 * Soundness: `as_str()` is valid UTF-8 equal to `as_bytes()` (this guards the `from_utf8_unchecked`).
 * Shape: the canonical form has the fixed length, and every byte is in the allowed class for its
   position.
-* Constructor agreement: `parse`, `from_bytes`, `FromStr`, and `TryFrom` all return the same value,
-  and parsing the canonical form is idempotent.
-* Accessor consistency: segment accessors match the canonical string, and for an ISIN the stored
-  check digit equals the recomputed one.
+* Constructor agreement: `parse`, `new`, `from_bytes`, `FromStr`, and every `TryFrom` impl
+  (`&str`, `[u8; N]`, `&[u8]`) all return the same value, and parsing the canonical form is
+  idempotent.
+* Accessor consistency: segment accessors match the canonical string. For an ISIN the stored check
+  digit equals the recomputed one, and `country()` agrees with `CountryCode::parse` of the prefix
+  (it is `None` for structurally valid but ISO 3166-1 unassigned prefixes such as `XS`). For a CNPJ
+  `is_root()`, `branch_number()`, and the punctuated `formatted()` form stay consistent with the
+  branch segment and `Display`.
+* Trait conversions: `PartialEq<str>`/`PartialEq<&str>` and `AsRef<str>`/`AsRef<[u8]>` agree with
+  the canonical string and bytes.
 * serde: the value round trips through its JSON string.
-* Rendering: `Display` and `Debug` never panic. Formatting a rejected value's error never panics.
+* Rendering: `Display` and `Debug` never panic. Formatting a rejected value's error never panics,
+  and for a rejected input an `InvalidLength` error reports the same length the parser measured.
 
 ## Running
 

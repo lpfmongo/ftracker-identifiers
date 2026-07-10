@@ -1,7 +1,7 @@
 #![no_main]
 
 use arbitrary::{Arbitrary, Unstructured};
-use ftracker_identifiers::Cfi;
+use ftracker_identifiers::{Cfi, CfiError};
 use libfuzzer_sys::fuzz_target;
 
 const LEN: usize = 6;
@@ -25,9 +25,18 @@ fn check(value: Cfi) {
 
     // Every constructor agrees and parsing the canonical form is idempotent.
     assert_eq!(Cfi::parse(value.as_str()), Ok(value));
+    assert_eq!(Cfi::new(value.as_str()), Ok(value));
     assert_eq!(Cfi::from_bytes(*value.as_bytes()), Ok(value));
     assert_eq!(value.as_str().parse::<Cfi>(), Ok(value));
     assert_eq!(Cfi::try_from(value.as_str()), Ok(value));
+    assert_eq!(Cfi::try_from(*value.as_bytes()), Ok(value));
+    assert_eq!(Cfi::try_from(value.as_bytes().as_slice()), Ok(value));
+
+    // Equality and reference conversions agree with the canonical string/bytes.
+    assert_eq!(value, *value.as_str());
+    assert_eq!(value, value.as_str());
+    assert_eq!(<Cfi as AsRef<str>>::as_ref(&value), value.as_str());
+    assert_eq!(<Cfi as AsRef<[u8]>>::as_ref(&value), value.as_bytes());
 
     // serde round-trips through the canonical string.
     let json = serde_json::to_string(&value).expect("serialize");
@@ -57,9 +66,14 @@ fuzz_target!(|data: &[u8]| {
     if let Ok(text) = std::str::from_utf8(data) {
         match Cfi::parse(text) {
             Ok(value) => check(value),
-            // Formatting the error must never panic either.
+            // Formatting the error must never panic, and reported metadata must match the input.
             Err(err) => {
                 let _ = err.to_string();
+                if let CfiError::InvalidLength { found } = err {
+                    // `found` counts characters after trimming surrounding whitespace.
+                    assert_eq!(found, text.trim().chars().count());
+                    assert_ne!(found, LEN);
+                }
             }
         }
     }

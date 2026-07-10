@@ -1,7 +1,7 @@
 #![no_main]
 
 use arbitrary::{Arbitrary, Unstructured};
-use ftracker_identifiers::Isin;
+use ftracker_identifiers::{CountryCode, Isin, IsinError};
 use libfuzzer_sys::fuzz_target;
 
 const LEN: usize = 12;
@@ -29,11 +29,28 @@ fn check(value: Isin) {
     assert_eq!(value.check_digit(), value.computed_check_digit());
     assert!(value.check_digit() < 10);
 
+    // `country()` is the ISO 3166-1 cross-validation of the prefix. When present it must agree
+    // with the raw prefix, and it must be exactly what `CountryCode::parse` accepts for it.
+    let country = value.country();
+    assert_eq!(country, CountryCode::parse(value.country_code()).ok());
+    if let Some(cc) = country {
+        assert_eq!(cc.as_str(), value.country_code());
+    }
+
     // Every constructor agrees and parsing the canonical form is idempotent.
     assert_eq!(Isin::parse(value.as_str()), Ok(value));
+    assert_eq!(Isin::new(value.as_str()), Ok(value));
     assert_eq!(Isin::from_bytes(*value.as_bytes()), Ok(value));
     assert_eq!(value.as_str().parse::<Isin>(), Ok(value));
     assert_eq!(Isin::try_from(value.as_str()), Ok(value));
+    assert_eq!(Isin::try_from(*value.as_bytes()), Ok(value));
+    assert_eq!(Isin::try_from(value.as_bytes().as_slice()), Ok(value));
+
+    // Equality and reference conversions agree with the canonical string/bytes.
+    assert_eq!(value, *value.as_str());
+    assert_eq!(value, value.as_str());
+    assert_eq!(<Isin as AsRef<str>>::as_ref(&value), value.as_str());
+    assert_eq!(<Isin as AsRef<[u8]>>::as_ref(&value), value.as_bytes());
 
     // serde round-trips through the canonical string.
     let json = serde_json::to_string(&value).expect("serialize");
@@ -69,9 +86,14 @@ fuzz_target!(|data: &[u8]| {
     if let Ok(text) = std::str::from_utf8(data) {
         match Isin::parse(text) {
             Ok(value) => check(value),
-            // Formatting the error must never panic either.
+            // Formatting the error must never panic, and reported metadata must match the input.
             Err(err) => {
                 let _ = err.to_string();
+                if let IsinError::InvalidLength { found } = err {
+                    // `found` counts characters after trimming surrounding whitespace.
+                    assert_eq!(found, text.trim().chars().count());
+                    assert_ne!(found, LEN);
+                }
             }
         }
     }
