@@ -19,15 +19,24 @@ Validated, `no_std`-first identifier types for Rust. It is:
 [![API Docs][docs-badge]][docs-url]
 
 [actions-badge]: https://github.com/lnivva/ftracker-identifiers/workflows/CI/badge.svg
+
 [actions-url]: https://github.com/lnivva/ftracker-identifiers/actions?query=workflow%3ACI+branch%3Amain
+
 [crates-badge]: https://img.shields.io/crates/v/ftracker-identifiers.svg
+
 [crates-url]: https://crates.io/crates/ftracker-identifiers
+
 [mit-badge]: https://img.shields.io/badge/license-MIT-blue.svg
+
 [mit-url]: https://github.com/lnivva/ftracker-identifiers/blob/main/LICENSE
+
 [msrv-badge]: https://img.shields.io/badge/rustc-1.93.0+-blue.svg
+
 [msrv-url]: #supported-rust-versions
-[docs-badge]: https://docs.rs/ftracker-identifiers/badge.svg
-[docs-url]: https://docs.rs/ftracker-identifiers
+
+[docs-badge]: https://img.shields.io/docsrs/ftracker-identifiers
+
+[docs-url]: https://docs.rs/ftracker-identifiers/latest/ftracker_identifiers/
 
 [API Docs](https://docs.rs/ftracker-identifiers) |
 [Guide](https://lnivva.github.io/ftracker-identifiers) |
@@ -123,6 +132,7 @@ Contributions are welcome. See the [contributing guide][guide] to get started,
 and please note that this project follows a [Code of Conduct][coc].
 
 [guide]: docs/src/contributing/adding-a-new-identifier.md
+
 [coc]: CODE_OF_CONDUCT.md
 
 ## License
