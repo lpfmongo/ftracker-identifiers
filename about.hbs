@@ -64,9 +64,14 @@
                 <h4>Used by:</h4>
                 <ul class="license-used-by">
                     {{#each used_by}}
+                        {{!-- Skip this workspace crate itself (source is null for
+                              path/workspace members) so the report never references
+                              our own version and can't drift on a release bump. --}}
+                        {{#if crate.source}}
                         <li><a href="{{#if
                                 crate.repository}} {{crate.repository}} {{else}} https://crates.io/crates/{{crate.name}} {{/if}}">{{crate.name}} {{crate.version}}</a>
                         </li>
+                        {{/if}}
                     {{/each}}
                 </ul>
                 <pre class="license-text">{{text}}</pre>
