@@ -2,13 +2,13 @@ use core::fmt;
 
 /// The class of characters permitted at a given position of an LEI.
 
-/// Reported by [`LeiError::InvalidCharacter`] to describe what was expected where an invalid 
+/// Reported by [`LeiError::InvalidCharacter`] to describe what was expected where an invalid
 /// character was found.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CharacterClass {
     /// An ASCII digit, `'0'...='9'` (the two check digits at positions 19-20).
     Digit,
-    /// An ASCII digit or an uppercase ASCII letter, `'0'...='9' | 'A'...='Z'` (positions 1-18: the 
+    /// An ASCII digit or an uppercase ASCII letter, `'0'...='9' | 'A'...='Z'` (positions 1-18: the
     /// LOU prefix and the entity-specific part).
     Alphanumeric,
 }
