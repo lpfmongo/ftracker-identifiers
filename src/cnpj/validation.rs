@@ -64,7 +64,7 @@ fn validate_character_classes(candidate: &[u8; 14]) -> Result<(), CnpjError> {
         };
         if !is_valid {
             let expected = if i < BASE_LEN {
-                CharacterClass::AlphanumericUppercase
+                CharacterClass::Alphanumeric
             } else {
                 CharacterClass::Digit
             };
@@ -193,7 +193,7 @@ mod tests {
             CnpjError::InvalidCharacter {
                 character: '!',
                 position: 3,
-                expected: CharacterClass::AlphanumericUppercase,
+                expected: CharacterClass::Alphanumeric,
             }
         );
     }

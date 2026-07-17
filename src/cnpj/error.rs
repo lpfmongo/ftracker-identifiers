@@ -9,14 +9,14 @@ pub enum CharacterClass {
     /// An ASCII digit, `'0'...='9'`.
     Digit,
     /// An ASCII digit or an uppercase ASCII letter, `'0'...='9' | 'A'...='Z'`.
-    AlphanumericUppercase,
+    Alphanumeric,
 }
 
 impl fmt::Display for CharacterClass {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             CharacterClass::Digit => write!(f, "a digit (0-9)"),
-            CharacterClass::AlphanumericUppercase => {
+            CharacterClass::Alphanumeric => {
                 write!(f, "a digit (0-9) or an uppercase letter (A-Z)")
             }
         }

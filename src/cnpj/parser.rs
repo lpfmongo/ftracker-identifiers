@@ -41,7 +41,7 @@ pub(super) fn normalize(input: &str) -> Result<[u8; 14], CnpjError> {
             return Err(CnpjError::InvalidCharacter {
                 character: ch,
                 position: (i + 1) as u8,
-                expected: super::error::CharacterClass::AlphanumericUppercase,
+                expected: super::error::CharacterClass::Alphanumeric,
             });
         }
         buf[i] = ch.to_ascii_uppercase() as u8;
