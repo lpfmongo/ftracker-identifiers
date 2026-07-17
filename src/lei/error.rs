@@ -1,7 +1,6 @@
 use core::fmt;
 
 /// The class of characters permitted at a given position of an LEI.
-
 /// Reported by [`LeiError::InvalidCharacter`] to describe what was expected where an invalid
 /// character was found.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -25,7 +24,6 @@ impl fmt::Display for CharacterClass {
 }
 
 /// The set of reasons an LEI string can fail validation.
-///
 /// Every fallible constructor of [`Lei`](super::Lei) returns this type; each variant maps to a
 /// single, specific failure so callers can react programmatically (for example, highlighting the
 /// offending character in a form field) rather than parsing a human-readable message.
