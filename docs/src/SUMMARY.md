@@ -32,6 +32,13 @@
     - [Error Handling](./identifiers/country/error-handling.md)
     - [Feature Flags](./identifiers/country/feature-flags.md)
     - [Examples](./identifiers/country/examples.md)
+- [LEI](./identifiers/lei/README.md)
+    - [Structure & Formats](./identifiers/lei/format.md)
+    - [Parsing & Validation](./identifiers/lei/parsing-and-validation.md)
+    - [Formatting & Display](./identifiers/lei/formatting-and-display.md)
+    - [Error Handling](./identifiers/lei/error-handling.md)
+    - [Feature Flags](./identifiers/lei/feature-flags.md)
+    - [Examples](./identifiers/lei/examples.md)
 
 ---
 

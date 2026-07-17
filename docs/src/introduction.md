@@ -21,6 +21,8 @@ Every type in this crate follows the same philosophy:
   the legacy numeric-only format and the 2026 alphanumeric format.
 - [**ISIN**](./identifiers/isin/README.md) — the ISO 6166 identifier for a fungible financial security, validated with
   the ISO 6166 Luhn check digit.
+- [**LEI**](./identifiers/lei/README.md) — the ISO 17442 Legal Entity Identifier for entities in financial transactions,
+  validated with the ISO/IEC 7064 MOD 97-10 check digits.
 
 ## What's planned
 
