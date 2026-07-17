@@ -51,16 +51,19 @@ match on it.
 ## Validation policy: what this crate deliberately does *not* check
 
 This crate validates the **ISO 17442 code definition** — structure plus the ISO/IEC 7064 MOD 97-10 checksum — and
-nothing beyond it. Two boundaries are intentional design decisions rather than oversights:
+nothing beyond it. One boundary is an intentional design decision rather than an oversight:
 
 - **No `"00"` requirement at positions 5–6.** GLEIF's Global LEI System currently allocates codes with `"00"` in the two
   positions after the LOU prefix, but that is an *operational* convention, not a rule of ISO 17442. It can change, and
   encoding it here would reject codes that are otherwise standard-conformant. `Lei` therefore validates positions 5–18
   purely as alphanumeric, the same way `Isin` validates its country-code prefix structurally rather than against a live
   registry.
-- **No exclusion of `00` / `01` / `99` check digits.** GLEIF documents that a correctly *generated* LEI never has these
-  check-digit values, but the ISO/IEC 7064 arithmetic itself does not forbid them. Rather than layer an extra rule on
-  top of the standard's `n mod 97 == 1` test, `Lei` applies that test verbatim.
+
+The check-digit values `00`, `01`, and `99` are a different matter — they are **not** accepted, because they can never
+appear in a valid LEI. The check digits equal `98 - (n mod 97)`, which always lands in `02..=98`, and ISO 17442-1 limits
+the pair to that range too. `Lei` enforces this by comparing the candidate's digits against the recomputed pair, so a
+value carrying `00`, `01`, or `99` is rejected with `InvalidCheckDigits` like any other mismatch. (A weaker
+*residue-only* `n mod 97 == 1` test would let some such values through; this crate does not use one.)
 
 If you need to confirm that a specific LEI has actually been *issued and registered*, look it up in
 the [Global LEI Index](https://search.gleif.org/); that existence check is out of scope for a checksum-oriented value

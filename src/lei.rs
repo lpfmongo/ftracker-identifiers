@@ -44,16 +44,17 @@
 //! ## Validation policy (deliberate scope)
 //!
 //! This crate validates an LEI **structurally and by the ISO/IEC 7064 MOD 97-10 arithmetic only**.
-//! Two things it deliberately does *not* do, both because they belong to GLEIF operational policy
-//! rather than to the ISO 17442 code definition:
+//! One thing it deliberately does *not* do belongs to GLEIF operational policy rather than to the
+//! ISO 17442 code definition:
 //!
 //! - **It does not require positions 5–6 to be `"00"`.** The Global LEI System currently allocates
 //!   codes with `"00"` there, but that is an issuance convention, not a rule of ISO 17442, and it
 //!   may change. Enforcing it would reject otherwise standard-conformant identifiers. This mirrors
 //!   how [`Isin`](crate::Isin) validates its country prefix purely structurally.
-//! - **It does not additionally reject the check-digit values `00`, `01`, or `99`.** GLEIF notes
-//!   these never arise from a correctly *generated* LEI, but they are not excluded by the ISO/IEC
-//!   7064 arithmetic itself, so the literal `n mod 97 == 1` test is used unchanged.
+//!
+//! The check digits of a valid LEI are always in `02...=98`: they equal `98 - (n mod 97)`, and per
+//! ISO 17442-1 the pair `00`, `01`, and `99` cannot occur. This crate enforces that by comparing
+//! against the recomputed pair, so those three values are rejected like any other mismatch.
 //!
 //! A value that passes therefore is a structurally valid, MOD 97-10-correct LEI per ISO 17442; it
 //! is **not** a claim that GLEIF has actually issued that specific code. Look the code up in the

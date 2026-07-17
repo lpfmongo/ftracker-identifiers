@@ -26,15 +26,20 @@
 //! This crate validates an LEI **structurally and by the ISO/IEC 7064 arithmetic only**:
 //!
 //! - Positions 1-18 must be ASCII alphanumeric (`[A-Z0-9]`) and positions 19-20 must be ASCII
-//!   digits (`[0-9]`), then the MOD 97-10 residue must equal `1`.
+//!   digits (`[0-9]`), then the two check digits must equal the pair computed from the base by the
+//!   MOD 97-10 algorithm (equivalently, the full-string residue is `1`).
 //! - It **does not** enforce GLEIF's *operational* convention that positions 5-6 are `"00"`. That
 //!   is an allocation policy of the Global LEI System, not a rule of ISO 17442, and it may change;
 //!   encoding it here would reject otherwise standard-conformant codes. This mirrors how
 //!   [`Isin`](crate::Isin) validates its country prefix purely structurally.
-//! - It **does not** additionally reject the check-digit values `00`, `01`, or `99`. GLEIF notes
-//!   these never arise from a correctly *generated* LEI, but they are not excluded by the ISO/IEC
-//!   7064 arithmetic itself. Keeping to the literal `n mod 97 == 1` test keeps this type a faithful
-//!   checksum value object rather than a reimplementation of GLEIF issuance policy.
+//! - The check-digit values `00`, `01`, and `99` **cannot** appear in a valid LEI, and this crate
+//!   rejects them. The check digits are `98 - (n mod 97)`, and since `n mod 97` ranges over
+//!   `0...=96`, that expression ranges over `2...=98`; ISO 17442-1 likewise limits the pair to
+//!   `02...=98`. This is not an extra rule layered on top of the arithmetic: because `validate`
+//!   compares the candidate's digits against the pair recomputed by [`compute_check_digits`] (never
+//!   `00`/`01`/`99`), the exclusion follows directly. Note that a *residue-only* `n mod 97 == 1`
+//!   test would be weaker here, accepting some bases paired with `00`, `01`, or `99`; those all
+//!   fail the compute-and-compare check this crate uses.
 //!
 //! In short: a value that passes here is a structurally valid, MOD 97-10-correct LEI per ISO 17442.
 //! It is *not* a guarantee that GLEIF has actually issued that specific code.
@@ -278,6 +283,22 @@ mod tests {
                 found: 25,
             }
         );
+    }
+
+    #[test]
+    fn rejects_residue_one_with_reserved_check_digits() {
+        for (s, expected, found) in [
+            ("PRKYQO9OOQ90FWGOFC00", 97u8, 0u8),
+            ("TS43UAPFUU97VO4FE001", 98, 1),
+            ("2MZDL7DS67LXXZ93H099", 2, 99),
+        ] {
+            assert_eq!(residue(&candidate(s)), 1, "{s} residue must be 1");
+            assert_eq!(
+                validate(&candidate(s)),
+                Err(LeiError::InvalidCheckDigits { expected, found }),
+                "{s} must be rejected despite residue 1"
+            );
+        }
     }
 
     #[test]
