@@ -1,20 +1,23 @@
 # Fuzzing
 
-Every identifier in this crate is a small value object built by parsing untrusted text, and each one
-exposes its canonical string through an unchecked byte to string conversion (`from_utf8_unchecked`).
-That makes the parsers a natural place for coverage guided fuzzing: it explores far more shapes of
-malformed input than hand written tests, and it proves the unchecked conversion can never observe
-invalid UTF-8.
+Every identifier in this crate is a small value object built by parsing untrusted text, and each one exposes its
+canonical string through an unchecked byte to string conversion (`from_utf8_unchecked`). That makes the parsers a
+natural place for coverage guided fuzzing: it explores far more shapes of malformed input than handwritten tests, and
+it proves the unchecked conversion can never observe invalid UTF-8.
 
-The fuzz targets live in the `fuzz/` directory as a standalone crate. They reuse the `Arbitrary`
-implementations (the `arbitrary` feature) to generate valid values, and the `serde` feature to check
-serialization round trips.
+The fuzz targets live in the `fuzz/` directory as a standalone crate. They reuse the `Arbitrary` implementations (the
+`arbitrary` feature) to generate valid values, and the `serde` feature to check serialization round trips.
 
 ## Prerequisites
 
-Fuzzing uses [`cargo-fuzz`](https://github.com/rust-fuzz/cargo-fuzz), which builds with libFuzzer and
-requires a nightly toolchain. The library itself stays on stable; only the fuzzer runtime needs
-nightly.
+Fuzzing uses [`cargo-fuzz`](https://github.com/rust-fuzz/cargo-fuzz), which builds with libFuzzer and requires a nightly
+toolchain. The library itself stays on stable; only the fuzzer runtime needs nightly.
+
+The `just fuzz*` recipes handle this for you: they install a missing nightly toolchain and `cargo-fuzz` automatically (
+and `just fuzz-coverage` also adds the `llvm-tools` component) the first time you run them, so no manual setup is
+needed.
+
+If you prefer to invoke `cargo +nightly fuzz …` directly instead of through `just`, install the prerequisites yourself:
 
 ```sh
 cargo install cargo-fuzz
@@ -29,40 +32,39 @@ There is one target per identifier:
 * `cfi`
 * `isin`
 * `cnpj`
+* `lei`
 
 ### How each target drives the code
 
-To reach the deep logic instead of bouncing off the length and character gates, every target feeds
-the same input through four lenses:
+To reach the deep logic instead of bouncing off the length and character gates, every target feeds the same input
+through four lenses:
 
 1. As arbitrary UTF-8 text handed to `parse`.
 2. As raw bytes handed to `from_bytes`.
-3. As a structure aware candidate: a string built to the exact canonical length and character class
-   (for example two letters plus nine alphanumerics plus a digit for an ISIN), so the checksum or
-   taxonomy logic runs on near valid input on almost every execution.
+3. As a structure aware candidate: a string built to the exact canonical length and character class (for example two
+   letters plus nine alphanumerics plus a digit for an ISIN), so the checksum or taxonomy logic runs on near valid input
+   on almost every execution.
 4. As an `Arbitrary` generated value, which exercises the acceptance path directly.
 
-A committed dictionary per target (`fuzz/dict/<target>.dict`) supplies tokens (category letters,
-sample codes, boundary punctuation) that steer the mutator toward interesting inputs.
+A committed dictionary per target (`fuzz/dict/<target>.dict`) supplies tokens (category letters, sample codes, boundary
+punctuation) that steer the mutator toward interesting inputs.
 
 ### Invariants every accepted value must satisfy
 
 * Soundness: `as_str()` is valid UTF-8 equal to `as_bytes()` (this guards the `from_utf8_unchecked`).
-* Shape: the canonical form has the fixed length, and every byte is in the allowed class for its
-  position.
-* Constructor agreement: `parse`, `new`, `from_bytes`, `FromStr`, and every `TryFrom` impl
-  (`&str`, `[u8; N]`, `&[u8]`) all return the same value, and parsing the canonical form is
-  idempotent.
-* Accessor consistency: segment accessors match the canonical string. For an ISIN the stored check
-  digit equals the recomputed one, and `country()` agrees with `CountryCode::parse` of the prefix
-  (it is `None` for structurally valid but ISO 3166-1 unassigned prefixes such as `XS`). For a CNPJ
-  `is_root()`, `branch_number()`, and the punctuated `formatted()` form stay consistent with the
-  branch segment and `Display`.
-* Trait conversions: `PartialEq<str>`/`PartialEq<&str>` and `AsRef<str>`/`AsRef<[u8]>` agree with
-  the canonical string and bytes.
+* Shape: the canonical form has the fixed length, and every byte is in the allowed class for its position.
+* Constructor agreement: `parse`, `new`, `from_bytes`, `FromStr`, and every `TryFrom` impl (`&str`, `[u8; N]`, `&[u8]`)
+  all return the same value, and parsing the canonical form is idempotent.
+* Accessor consistency: segment accessors match the canonical string. For an ISIN the stored check digit equals the
+  recomputed one, and `country()` agrees with `CountryCode::parse` of the prefix (it is `None` for structurally valid
+  but ISO 3166-1 unassigned prefixes such as `XS`). For a CNPJ `is_root()`, `branch_number()`, and the punctuated
+  `formatted()` form stay consistent with the branch segment and `Display`. For an LEI the stored check digits equal the
+  recomputed ISO/IEC 7064 MOD 97-10 value, and `lou_prefix()` and `entity_id()` match the canonical string.
+* Trait conversions: `PartialEq<str>`/`PartialEq<&str>` and `AsRef<str>`/`AsRef<[u8]>` agree with the canonical string
+  and bytes.
 * serde: the value round trips through its JSON string.
-* Rendering: `Display` and `Debug` never panic. Formatting a rejected value's error never panics,
-  and for a rejected input an `InvalidLength` error reports the same length the parser measured.
+* Rendering: `Display` and `Debug` never panic. Formatting a rejected value's error never panics, and for a rejected
+  input an `InvalidLength` error reports the same length the parser measured.
 
 ## Running
 
@@ -88,15 +90,14 @@ cargo +nightly fuzz run <target> fuzz/artifacts/<target>/<crash-file>
 
 ## Corpus and seeds
 
-* `fuzz/seeds/<target>/` holds known inputs (valid codes and edge shapes such as wrong length, bad
-  character, and reserved codes), committed to git, to give the fuzzer a head start. Treat this
-  directory as read only.
+* `fuzz/seeds/<target>/` holds known inputs (valid codes and edge shapes such as wrong length, bad character, and
+  reserved codes), committed to git, to give the fuzzer a head start. Treat this directory as read only.
 * `fuzz/dict/<target>.dict` is the committed libFuzzer dictionary of useful tokens.
-* `fuzz/corpus/<target>/` is the growing working corpus that libFuzzer writes to. It is ignored by
-  git, along with `fuzz/artifacts/` and `fuzz/target/`.
+* `fuzz/corpus/<target>/` is the growing working corpus that libFuzzer writes to. It is ignored by git, along with
+  `fuzz/artifacts/` and `fuzz/target/`.
 
-When a target uncovers an interesting new input, consider minimizing it and adding it to the seeds
-directory so the case is preserved.
+When a target uncovers an interesting new input, consider minimizing it and adding it to the seeds directory so the case
+is preserved.
 
 ## Measuring coverage
 
@@ -106,8 +107,11 @@ To see how much of the parsing and validation code the corpus actually exercises
 just fuzz-coverage cnpj
 ```
 
-That writes `fuzz/coverage/<target>/coverage.profdata`. Render a per file report with the nightly
-`llvm-cov`, for example:
+That recipe installs the `llvm-tools` component if needed, generates the coverage profile under
+`fuzz/coverage/<target>/coverage.profdata`, and prints a per-file report directly — no extra steps.
+
+Under the hood it renders the report with the nightly `llvm-cov`; if you need to run it by hand (for example, with
+different flags), point `llvm-cov` at the coverage binary and profile:
 
 ```sh
 LLVMCOV="$(rustc +nightly --print target-libdir)/../bin/llvm-cov"
@@ -115,5 +119,5 @@ BIN="$(find target -type f -path '*coverage*release/cnpj' ! -name '*.*' | head -
 "$LLVMCOV" report "$BIN" -instr-profile=fuzz/coverage/cnpj/coverage.profdata
 ```
 
-The parser and validation modules should sit near full line coverage. Formatting and error modules
-are also exercised, though some rendering branches are covered more thoroughly by the unit tests.
+The parser and validation modules should sit near full line coverage. Formatting and error modules are also exercised,
+though some rendering branches are covered more thoroughly by the unit tests.
