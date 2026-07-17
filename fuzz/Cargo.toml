@@ -49,3 +49,10 @@ path = "fuzz_targets/cnpj.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "lei"
+path = "fuzz_targets/lei.rs"
+test = false
+doc = false
+bench = false

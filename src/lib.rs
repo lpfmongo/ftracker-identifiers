@@ -16,6 +16,8 @@
 //!   code validated against an embedded copy of the standard's code table.
 //! * [`CountryCode`]: the ISO 3166-1 alpha-2 country code, two letters validated against the
 //!   officially assigned set.
+//! * [`Lei`]: the ISO 17442 Legal Entity Identifier, a 20-character alphanumeric code validated
+//!   with the ISO/IEC 7064 MOD 97-10 check digits.
 //!
 //! # Design
 //!
@@ -44,7 +46,7 @@
 //! # Example
 //!
 //! ```
-//! use ftracker_identifiers::{Cnpj, Isin, Cfi, CountryCode};
+//! use ftracker_identifiers::{Cnpj, Isin, Cfi, CountryCode, Lei};
 //!
 //! let cnpj = Cnpj::parse("00.000.000/0001-91").unwrap();
 //! assert_eq!(cnpj.as_str(), "00000000000191");
@@ -57,6 +59,9 @@
 //!
 //! let country = CountryCode::parse("br").unwrap();
 //! assert_eq!(country.as_str(), "BR");
+//!
+//! let lei = Lei::parse("5493000IBP32UQZ0KL24").unwrap();
+//! assert_eq!(lei.lou_prefix(), "5493");
 //! ```
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_docs)]
@@ -78,3 +83,7 @@ pub use cfi::{Cfi, CfiError};
 pub mod country;
 #[doc(inline)]
 pub use country::{CountryCode, CountryCodeError};
+
+pub mod lei;
+#[doc(inline)]
+pub use lei::{Lei, LeiError};

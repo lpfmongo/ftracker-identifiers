@@ -70,6 +70,10 @@ harness = false
 name = "country_benches"
 harness = false
 
+[[bench]]
+name = "lei_benches"
+harness = false
+
 # Build-time tooling: regenerates `src/cfi/table.rs` from `data/cfi.json`. Gated behind `codegen`
 # so it (and its `serde_json` dependency) is skipped by default and for downstream consumers.
 # Run via `just cfi-generate`.
